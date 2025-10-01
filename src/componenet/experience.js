@@ -146,7 +146,9 @@ export default function DynamicPortfolioScroller() {
       const raw = (scrollTop - start) / total;
       const progress = Math.min(Math.max(raw, 0), 1);
       const translateX = -Math.round(progress * maxTranslate);
-      innerRef.current.style.transform = `translate3d(${translateX}px,0,0)`;
+      if (innerRef.current) {
+        innerRef.current.style.transform = `translate3d(${translateX}px,0,0)`;
+      }
       rafRef.current = null;
     });
   }, []);
@@ -154,15 +156,28 @@ export default function DynamicPortfolioScroller() {
   // Memoized geometry computation
   const computeGeometry = useCallback(() => {
     const wrapper = wrapperRef.current;
-    if (!wrapper) return;
+    const inner = innerRef.current;
+    if (!wrapper || !inner) return;
     
     const rect = wrapper.getBoundingClientRect();
     const start = window.scrollY + rect.top;
     const end = start + wrapper.offsetHeight - window.innerHeight;
     const total = Math.max(end - start, 1);
-    const maxTranslate = Math.max(innerRef.current?.scrollWidth - window.innerWidth, 0);
+    
+    // Calculate maxTranslate based on the number of projects (each takes 100vw)
+    const maxTranslate = Math.max(inner.scrollWidth - window.innerWidth, 0);
+    
     geomRef.current = { start, end, total, maxTranslate };
   }, []);
+
+  // Get images for display - only 3 on mobile
+  const getDisplayImages = useCallback((projectImages) => {
+    if (isMobile) {
+      // Return only first 3 images on mobile
+      return projectImages.slice(0, 3);
+    }
+    return projectImages;
+  }, [isMobile]);
 
   useEffect(() => {
     const wrapper = wrapperRef.current;
@@ -175,6 +190,7 @@ export default function DynamicPortfolioScroller() {
 
     const ensureWrapperHeight = () => {
       // Reduce height on mobile for better scrolling experience
+      // The height should be based on number of projects, not images
       wrapper.style.height = `${projects.length * (isMobile ? 80 : 100)}vh`;
     };
 
@@ -221,15 +237,6 @@ export default function DynamicPortfolioScroller() {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [computeGeometry, onScroll, isMobile]);
-
-  // Get images for display - only 3 on mobile
-  const getDisplayImages = useCallback((projectImages) => {
-    if (isMobile) {
-      // Return only first 3 images on mobile
-      return projectImages.slice(0, 3);
-    }
-    return projectImages;
-  }, [isMobile]);
 
   // Optimized image style calculation with responsive adjustments
   const getImageStyle = useCallback((image, imageIndex, projectIndex) => {
