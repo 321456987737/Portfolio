@@ -1,0 +1,118 @@
+.container {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 35% 30%, #071027 0%, #000 55%)/100;
+  color: #fff;
+  transition: opacity 400ms ease;
+  pointer-events: none;
+}
+
+/* center wrapper keeps things tidy */
+.center {
+  position: relative;
+  width: min(90vw, 900px);
+  height: clamp(120px, 25vh, 220px);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* stacked letters container: each letter is absolutely centered initially */
+.letter {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%) translateY(0px) translateX(0px) rotate(0deg);
+  display: inline-block;
+  font-family: "Poppins", Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  font-weight: 700;
+   font-size: clamp(36px, 10vw, 84px); /* min 36px, scales with viewport, max 84px */
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  opacity: 0;
+  will-change: transform, opacity;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  backface-visibility: hidden;
+
+  /* pop-in animation properties (initial) */
+  transition-property: transform, opacity;
+  transition-timing-function: cubic-bezier(0.2, 0.9, 0.2, 1);
+  transition-duration: 420ms;
+}
+
+/* small signature below (hidden initially) */
+.signature {
+  position: absolute;
+  top: 66%;
+  left: 50%;
+  transform: translateX(-50%);
+    font-size: clamp(10px, 2vw, 14px);
+  color: rgba(210, 220, 255, 0.9);
+  letter-spacing: 0.12em;
+  opacity: 0;
+  transition: opacity 380ms ease 380ms;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* ENTERED class applies the pop-in per-letter (stagger handled by inline delays) */
+.container.entered .letter {
+  opacity: 1;
+  transform: translate(-50%, -50%) translateY(calc(var(--stack-y, 0px))) scale(1);
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.65));
+}
+
+/* Slight differences for better 'stacked' depth: use nth-child offsets */
+.container.entered .letter:nth-child(1) { --stack-y: -4px; }
+.container.entered .letter:nth-child(2) { --stack-y: -2px; }
+.container.entered .letter:nth-child(3) { --stack-y: 0px; }
+.container.entered .letter:nth-child(4) { --stack-y: 2px; }
+.container.entered .letter:nth-child(5) { --stack-y: 4px; }
+.container.entered .letter:nth-child(6) { --stack-y: 6px; }
+.container.entered .letter:nth-child(7) { --stack-y: 8px; }
+.container.entered .letter:nth-child(8) { --stack-y: 10px; }
+
+/* SPREAD: when we add .spread on the container, letters move horizontally into place */
+.container.spread .letter {
+  /* final transform: we first center (-50%,-50%) then translateX(var(--tx)) */
+  transform: translate(-50%, -50%) translateX(var(--tx)) translateY(0px) rotate(var(--rot));
+  transition-timing-function: cubic-bezier(0.15, 0.9, 0.28, 1); /* elastic-ish */
+  transition-duration: 650ms;
+  text-shadow: 0 6px 20px rgba(0,0,0,0.6);
+}
+
+/* Slight scale/pop for the letters when spread */
+.container.spread .letter {
+  transform-origin: center;
+  font-size: clamp(36px, 10vw, 84px);
+  /* transform: translate(-50%, -50%) translateX(var(--tx)) translateY(0px) scale(1) rotate(var(--rot));
+  transition-duration: 650ms;
+  transition-timing-function: cubic-bezier(0.15, 0.9, 0.28, 1); */
+}
+
+/* reveal the small signature quickly after spread */
+.container.spread .signature {
+  opacity: 1;
+  transition-delay: 320ms;
+}
+
+/* Reduced-motion: jump directly to final text, short fade */
+@media (prefers-reduced-motion: reduce) {
+  .letter {
+    transition: none !important;
+    opacity: 1 !important;
+    transform: translate(-50%, -50%) translateX(0) translateY(0) !important;
+  }
+  .container {
+    transition: opacity 200ms linear;
+  }
+  .signature { opacity: 1; }
+}
+
+  /* sexy bg colors className="relative w-screen h-screen overflow-hidden bg-gradient-to-br from-black via-[#10061a] to-[#1b0f2a]" */
+   
