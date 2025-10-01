@@ -68,7 +68,7 @@ const itemVariants = {
 export default function SkillsComponent() {
   return (
     <section
-      className="relative mt-[200px] w-full min-h-[60vh] font-mono py-20 bg-black/50 shadow-[0_-300px_300px_rgba(0,0,0,0.6),0_300px_80px_rgba(0,0,0,0.35)]
+      className="relative mt-[200px] w-full min-h-[60vh] font-mono py-20 bg-[#000000]/50 shadow-[0_-300px_300px_rgba(0,0,0,0.6),0_300px_80px_rgba(0,0,0,0.35)]
  text-white flex items-center justify-center overflow-visible"
       aria-labelledby="skills-heading"
     >
@@ -141,7 +141,7 @@ export default function SkillsComponent() {
                 {/* Vertical Bar container (tall) */}
                 <div className="relative flex-1 w-5 bg-gray-800 rounded-full overflow-hidden flex flex-col justify-end items-center">
                   {/* background overlay for subtle rails */}
-                  <div className="absolute inset-0 opacity-30 bg-gradient-to-b from-black/0 to-black/10" />
+                  <div className="absolute inset-0 opacity-30 bg-gradient-to-b from-[#000000]/0 to-[#000000]/10" />
 
                   {/* Animated fill — grows upward */}
                   <motion.div
@@ -154,7 +154,7 @@ export default function SkillsComponent() {
                   />
 
                   {/* Percentage badge */}
-                  <div className="absolute -top-8 text-sm font-bold text-gray-200 bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm">
+                  <div className="absolute -top-8 text-sm font-bold text-gray-200 bg-[#000000]/60 px-3 py-1 rounded-full backdrop-blur-sm">
                     {skill.level}%
                   </div>
                 </div>

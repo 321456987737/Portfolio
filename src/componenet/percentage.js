@@ -82,7 +82,7 @@ const DonutChart = () => {
 
   return (
     <section
-      className="relative mt-[200px] w-full min-h-[60vh] font-mono py-20 bg-black/50 shadow-[0_-300px_80px_rgba(0,0,0,0.35),0_300px_300px_rgba(0,0,0,0.6)] text-white flex items-center justify-center overflow-visible"
+      className="relative mt-[200px] w-full min-h-[60vh] font-mono py-20 bg-[#000000]/50 shadow-[0_-300px_80px_rgba(0,0,0,0.35),0_300px_300px_rgba(0,0,0,0.6)] text-[#ffffff] flex items-center justify-center overflow-visible"
       aria-labelledby="role-heading"
     >
       <div className="relative w-full max-w-4xl px-4 sm:px-6 lg:px-8">
