@@ -505,7 +505,7 @@ export default function BackgroundStarsInteractiveV2() {
         ref={canvasRef}
         style={{
           width: "100%",
-          height: "100vh",
+          height: "120vh",
           display: "block",
         }}
       />

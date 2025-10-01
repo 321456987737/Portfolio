@@ -44,22 +44,22 @@ const projects = [
   }
 ];
 
-// Responsive size mappings
+// Responsive size mappings with reduced heights for mobile
 const sizeConfig = {
   small: { 
     width: "25%", 
     height: "30%",
-    md: { width: "20%", height: "25%" } // Smaller on mobile
+    md: { width: "22%", height: "20%" } // Reduced height for mobile
   },
   medium: { 
     width: "40%", 
     height: "50%",
-    md: { width: "35%", height: "45%" } // Smaller on mobile
+    md: { width: "38%", height: "35%" } // Reduced height for mobile
   },
   large: { 
     width: "60%", 
     height: "70%",
-    md: { width: "50%", height: "60%" } // Smaller on mobile
+    md: { width: "55%", height: "45%" } // Reduced height for mobile
   }
 };
 
@@ -68,22 +68,22 @@ const positionConfig = {
   "top-left": { 
     top: "10%", 
     left: "5%",
-    md: { top: "15%", left: "3%" } // Adjusted for smaller screens
+    md: { top: "12%", left: "3%" }
   },
   "top-right": { 
     top: "10%", 
     right: "5%",
-    md: { top: "15%", right: "3%" }
+    md: { top: "12%", right: "3%" }
   },
   "bottom-left": { 
     bottom: "10%", 
     left: "5%",
-    md: { bottom: "15%", left: "3%" }
+    md: { bottom: "12%", left: "3%" }
   },
   "bottom-right": { 
     bottom: "10%", 
     right: "5%",
-    md: { bottom: "15%", right: "3%" }
+    md: { bottom: "12%", right: "3%" }
   },
   "center": { 
     top: "50%", 
@@ -107,13 +107,13 @@ const positionConfig = {
     top: "15%", 
     left: "50%", 
     transform: "translateX(-50%)",
-    md: { top: "20%", left: "50%", transform: "translateX(-50%)" }
+    md: { top: "18%", left: "50%", transform: "translateX(-50%)" }
   },
   "bottom-center": { 
     bottom: "15%", 
     left: "50%", 
     transform: "translateX(-50%)",
-    md: { bottom: "20%", left: "50%", transform: "translateX(-50%)" }
+    md: { bottom: "18%", left: "50%", transform: "translateX(-50%)" }
   }
 };
 
@@ -174,8 +174,8 @@ export default function DynamicPortfolioScroller() {
     inner.style.transform = "translate3d(0,0,0)";
 
     const ensureWrapperHeight = () => {
-      // Reduce height on mobile for better scrolling experience
-      wrapper.style.height = `${projects.length * (isMobile ? 80 : 100)}vh`;
+      // Further reduced height on mobile for better scrolling with smaller images
+      wrapper.style.height = `${projects.length * (isMobile ? 70 : 100)}vh`;
     };
 
     const waitForImages = () => {
@@ -254,7 +254,7 @@ export default function DynamicPortfolioScroller() {
   }, []);
 
   return (
-    <section ref={wrapperRef} className="relative w-full mt-36 md:mt-48">
+    <section ref={wrapperRef} className="relative w-full mt-24 md:mt-36">
       <div className="sticky top-0 w-full h-screen overflow-hidden">
         <div
           ref={innerRef}
@@ -278,7 +278,7 @@ export default function DynamicPortfolioScroller() {
                         isHovered 
                           ? 'scale-105 shadow-3xl' 
                           : 'hover:scale-102 hover:shadow-3xl'
-                      } ${isMobile ? 'rounded-xl' : 'rounded-2xl'}`}
+                      } ${isMobile ? 'rounded-lg' : 'rounded-2xl'}`}
                       style={getImageStyle(image, imageIndex, projectIndex)}
                       onMouseEnter={() => handleImageHover(projectIndex, imageIndex)}
                       onMouseLeave={handleImageLeave}
@@ -294,16 +294,16 @@ export default function DynamicPortfolioScroller() {
                       <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center transition-all duration-300 ${
                         isHovered ? 'opacity-100' : 'opacity-0'
                       }`}>
-                        <div className={`text-white text-center mb-4 transition-all duration-300 ${
+                        <div className={`text-white text-center mb-3 transition-all duration-300 ${
                           isHovered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
                         }`}>
-                          <div className={`font-semibold bg-black/70 px-3 py-1 rounded-full mb-2 backdrop-blur-sm ${
-                            isMobile ? 'text-xs' : 'text-sm'
+                          <div className={`font-semibold bg-black/70 rounded-full mb-1 backdrop-blur-sm ${
+                            isMobile ? 'text-xs px-2 py-1' : 'text-sm px-3 py-1'
                           }`}>
                             {image.size === 'large' ? 'Main Feature' : image.size === 'medium' ? 'Key Screen' : 'Detail'}
                           </div>
-                          <div className={`opacity-90 bg-black/50 px-2 py-1 rounded ${
-                            isMobile ? 'text-xs' : 'text-xs'
+                          <div className={`opacity-90 bg-black/50 rounded ${
+                            isMobile ? 'text-xs px-1.5 py-0.5' : 'text-xs px-2 py-1'
                           }`}>
                             {image.position.replace('-', ' ')}
                           </div>
@@ -313,7 +313,7 @@ export default function DynamicPortfolioScroller() {
                       {/* Size Badge - Responsive positioning */}
                       <div className={`absolute backdrop-blur-sm rounded-full font-semibold transition-all duration-300 ${
                         isMobile 
-                          ? 'top-2 right-2 px-1.5 py-0.5 text-xs' 
+                          ? 'top-1.5 right-1.5 px-1.5 py-0.5 text-xs' 
                           : 'top-3 right-3 px-2 py-1 text-xs'
                       } ${
                         image.size === 'large' 
@@ -332,27 +332,27 @@ export default function DynamicPortfolioScroller() {
               {/* Project Info - Responsive positioning and sizing */}
               <div className={`absolute text-white z-50 ${
                 isMobile 
-                  ? 'left-4 right-4 bottom-4 max-w-full' 
+                  ? 'left-3 right-3 bottom-3 max-w-full' 
                   : 'left-8 bottom-8 max-w-md'
               }`}>
-                <div className={`bg-black/60 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl ${
-                  isMobile ? 'p-4' : 'p-6'
+                <div className={`bg-black/60 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl ${
+                  isMobile ? 'p-3 rounded-xl' : 'p-6 rounded-2xl'
                 }`}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-blue-400 rounded-full animate-pulse"></div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-1.5 h-1.5 bg-gradient-to-r from-green-400 to-blue-400 rounded-full animate-pulse"></div>
                     <span className={`font-semibold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent ${
                       isMobile ? 'text-xs' : 'text-sm'
                     }`}>
                       Project {projectIndex + 1}
                     </span>
                   </div>
-                  <h3 className={`font-bold mb-2 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent ${
-                    isMobile ? 'text-2xl' : 'text-4xl'
+                  <h3 className={`font-bold mb-1 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent ${
+                    isMobile ? 'text-xl' : 'text-4xl'
                   }`}>
                     {project.title}
                   </h3>
-                  <p className={`text-gray-300 mb-4 leading-relaxed ${
-                    isMobile ? 'text-sm' : 'text-base'
+                  <p className={`text-gray-300 leading-relaxed ${
+                    isMobile ? 'text-xs mb-2' : 'text-base mb-4'
                   }`}>
                     {project.description}
                   </p>
