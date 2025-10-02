@@ -299,7 +299,7 @@ export default function DynamicPortfolioScroller() {
       <div 
         className="sticky top-0 w-full overflow-hidden"
         style={{ 
-          height: isMobile ? '90vh' : '100vh'
+          height: isMobile ? '100vh' : '100vh'
         }}
       >
         <div
@@ -315,7 +315,7 @@ export default function DynamicPortfolioScroller() {
               key={project.id} 
               className="project-section w-screen flex-shrink-0 relative mobile-project-height"
               style={{
-                height: isMobile ? '90vh' : '100vh'
+                height: isMobile ? '100vh' : '100vh'
               }}
             >
               {/* Mobile Layout - Simple vertical stack */}
@@ -328,7 +328,7 @@ export default function DynamicPortfolioScroller() {
                     return (
                       <div
                         key={imageIndex}
-                        className="w-full rounded-xl overflow-hidden shadow-lg border border-gray-300 transition-all duration-300 active:scale-95"
+                        className="w-full rounded-xl overflow-hidden shadow-lg transition-all duration-300 active:scale-95"
                         style={{
                           height: '140px',
                           transform: `rotate(${tilt}deg)`,
@@ -354,7 +354,7 @@ export default function DynamicPortfolioScroller() {
                     return (
                       <div
                         key={imageIndex}
-                        className={`absolute rounded-2xl overflow-hidden shadow-2xl transition-all duration-400 border border-white/10 ${
+                        className={`absolute rounded-2xl overflow-hidden shadow-2xl transition-all duration-400 border border-[#ffffff]/10 ${
                           isHovered ? 'scale-105 shadow-3xl' : 'hover:scale-102 hover:shadow-3xl'
                         }`}
                         style={getImageStyle(image, imageIndex, projectIndex)}
@@ -397,7 +397,7 @@ export default function DynamicPortfolioScroller() {
               <div className={`absolute text-white z-50 ${
                 isMobile ? 'left-4 right-4 bottom-4 max-w-full' : 'left-8 bottom-8 max-w-md'
               }`}>
-                <div className={`bg-black/70 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl ${
+                <div className={`bg-black/70 backdrop-blur-lg rounded-2xl border border-[#ffffff]/20 shadow-2xl ${
                   isMobile ? 'p-4' : 'p-6'
                 }`}>
                   <div className="flex items-center gap-3 mb-3">
@@ -433,7 +433,7 @@ export default function DynamicPortfolioScroller() {
                 <div className="absolute inset-0 pointer-events-none opacity-10">
                   <div className="grid grid-cols-3 grid-rows-3 h-full w-full">
                     {Array.from({ length: 9 }).map((_, i) => (
-                      <div key={i} className="border border-white/20"></div>
+                      <div key={i} className="border border-[#ffffff]/20"></div>
                     ))}
                   </div>
                 </div>
@@ -462,7 +462,7 @@ export default function DynamicPortfolioScroller() {
       </div>
 
       {/* Mobile Scroll Indicator */}
-      {isMobile && (
+      {/* {isMobile && (
         <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 text-white text-center">
           <div className="bg-black/70 backdrop-blur-lg rounded-full px-6 py-3 border border-white/20 shadow-2xl">
             <div className="flex items-center gap-2">
@@ -474,13 +474,13 @@ export default function DynamicPortfolioScroller() {
       )}
 
       {/* Desktop Scroll Indicator */}
-      {!isMobile && (
+      {/* {!isMobile && (
         <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 text-white text-center">
           <div className="bg-black/70 backdrop-blur-lg rounded-full px-6 py-3 border border-white/20 shadow-2xl">
             <p className="text-sm font-medium">Scroll vertically to navigate horizontally</p>
           </div>
         </div>
-      )}
+      )} */}
     </section>
   );
 }
