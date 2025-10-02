@@ -1,6 +1,9 @@
 "use client";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 
+/* ============================
+   Projects & config (keep/update your image paths)
+   ============================ */
 const projects = [
   {
     id: 1,
@@ -117,6 +120,9 @@ const positionConfig = {
   }
 };
 
+/* ================
+   Component
+   ================ */
 export default function DynamicPortfolioScroller() {
   const wrapperRef = useRef(null);
   const innerRef = useRef(null);
@@ -136,47 +142,72 @@ export default function DynamicPortfolioScroller() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const onScroll = useCallback(() => {
+  const onScrollFrame = useCallback(() => {
     if (rafRef.current) return;
     rafRef.current = requestAnimationFrame(() => {
       const { start, total, maxTranslate } = geomRef.current;
-      const scrollTop = window.scrollY || window.pageYOffset;
+      // use visualViewport.pageTop if available (better on mobile)
+      const scrollTop = window.visualViewport ? window.visualViewport.pageTop : (window.scrollY || window.pageYOffset);
       const raw = (scrollTop - start) / total;
       const progress = Math.min(Math.max(raw, 0), 1);
       const translateX = -Math.round(progress * maxTranslate);
-      innerRef.current.style.transform = `translate3d(${translateX}px,0,0)`;
+      if (innerRef.current) innerRef.current.style.transform = `translate3d(${translateX}px,0,0)`;
       rafRef.current = null;
     });
   }, []);
 
-  const computeGeometry = useCallback(() => {
-    const wrapper = wrapperRef.current;
-    if (!wrapper) return;
-    
-    const rect = wrapper.getBoundingClientRect();
-    const start = window.scrollY + rect.top;
-    const end = start + wrapper.offsetHeight - window.innerHeight;
-    const total = Math.max(end - start, 1);
-    const maxTranslate = Math.max(innerRef.current?.scrollWidth - window.innerWidth, 0);
-    geomRef.current = { start, end, total, maxTranslate };
-  }, []);
-
+  /* Robust geometry + mobile fixes */
   useEffect(() => {
     const wrapper = wrapperRef.current;
     const inner = innerRef.current;
     if (!wrapper || !inner) return;
 
-    inner.style.willChange = "transform";
-    inner.style.transform = "translate3d(0,0,0)";
+    /* 1) --vh CSS var fix for mobile (optional but helpful if you use CSS vh) */
+    const setVhVar = () => {
+      const vhPx = window.innerHeight;
+      document.documentElement.style.setProperty('--vh', `${vhPx * 0.01}px`);
+    };
+    setVhVar();
+    window.addEventListener('resize', setVhVar);
 
-    const ensureWrapperHeight = () => {
-      wrapper.style.height = `${projects.length * (isMobile ? 80 : 100)}vh`;
+    /* 2) ensure wrapper height in px (convert the "vh" style to px using innerHeight/visualViewport) */
+    const ensureWrapperHeightPx = () => {
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      const perProjectPx = isMobile ? Math.round(viewportHeight * 0.80) : Math.round(viewportHeight * 1.0);
+      wrapper.style.height = `${projects.length * perProjectPx}px`;
     };
 
+    /* 3) force innerRef width to avoid w-max quirks on mobile */
+    const ensureInnerWidthPx = () => {
+      const viewportWidth = window.innerWidth;
+      inner.style.width = `${projects.length * viewportWidth}px`;
+      // Align each project slide to viewport width/height
+      Array.from(inner.children).forEach((child) => {
+        if (child && child.style) {
+          child.style.width = `${viewportWidth}px`;
+          child.style.height = `${window.visualViewport?.height ?? window.innerHeight}px`;
+        }
+      });
+    };
+
+    /* 4) compute geometry robustly */
+    const computeGeometryRobust = () => {
+      const rect = wrapper.getBoundingClientRect();
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      const scrollTop = window.visualViewport ? window.visualViewport.pageTop : (window.scrollY || window.pageYOffset);
+      // start: absolute page offset where the wrapper begins
+      const start = scrollTop + rect.top;
+      const end = start + wrapper.offsetHeight - viewportHeight;
+      const total = Math.max(end - start, 1);
+      const maxTranslate = Math.max(inner.scrollWidth - window.innerWidth, 0);
+      geomRef.current = { start, end, total, maxTranslate };
+      // console.debug('geom', geomRef.current);
+    };
+
+    /* 5) wait for images to complete to get accurate scrollWidth */
     const waitForImages = () => {
       const imgs = Array.from(inner.querySelectorAll("img"));
       if (!imgs.length) return Promise.resolve();
-      
       const promises = imgs.map((img) => {
         if (img.complete && img.naturalWidth !== 0) return Promise.resolve();
         return new Promise((resolve) => {
@@ -187,35 +218,56 @@ export default function DynamicPortfolioScroller() {
       return Promise.all(promises);
     };
 
+    /* init */
     const init = async () => {
-      ensureWrapperHeight();
+      inner.style.willChange = "transform";
+      inner.style.transform = "translate3d(0,0,0)";
+
+      ensureWrapperHeightPx();
+      ensureInnerWidthPx();
+
       await waitForImages();
-      computeGeometry();
-      onScroll();
+      computeGeometryRobust();
+      onScrollFrame();
     };
 
     init();
 
+    /* ResizeObserver for inner changes */
     const ro = new ResizeObserver(() => {
-      ensureWrapperHeight();
-      computeGeometry();
-      onScroll();
+      ensureWrapperHeightPx();
+      ensureInnerWidthPx();
+      computeGeometryRobust();
+      onScrollFrame();
     });
     ro.observe(inner);
 
-    window.addEventListener("resize", computeGeometry, { passive: true });
-    window.addEventListener("load", computeGeometry, { passive: true });
-    window.addEventListener("scroll", onScroll, { passive: true });
+    /* Listen to visualViewport where available for better mobile accuracy */
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', computeGeometryRobust, { passive: true });
+      window.visualViewport.addEventListener('scroll', onScrollFrame, { passive: true });
+    }
 
+    window.addEventListener('resize', computeGeometryRobust, { passive: true });
+    window.addEventListener('load', computeGeometryRobust, { passive: true });
+    window.addEventListener('scroll', onScrollFrame, { passive: true });
+
+    /* cleanup */
     return () => {
-      window.removeEventListener("resize", computeGeometry);
-      window.removeEventListener("load", computeGeometry);
-      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener('resize', computeGeometryRobust);
+      window.removeEventListener('load', computeGeometryRobust);
+      window.removeEventListener('scroll', onScrollFrame);
+      window.removeEventListener('resize', setVhVar);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', computeGeometryRobust);
+        window.visualViewport.removeEventListener('scroll', onScrollFrame);
+      }
       ro.disconnect();
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [computeGeometry, onScroll, isMobile]);
+  }, [isMobile, onScrollFrame]);
 
+  /* image style helper (kept from your original logic) */
   const getImageStyle = useCallback((image, imageIndex, projectIndex) => {
     const size = isMobile ? sizeConfig[image.size].md : sizeConfig[image.size];
     const position = isMobile ? positionConfig[image.position].md : positionConfig[image.position];
@@ -229,7 +281,7 @@ export default function DynamicPortfolioScroller() {
     return {
       ...size,
       ...position,
-      transform: `rotate(${tilt}deg) ${position.transform || ''}`,
+      transform: `${position.transform ? position.transform + ' ' : ''} rotate(${tilt}deg)`,
       transformOrigin: 'center',
       zIndex,
       transition: 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
@@ -246,7 +298,7 @@ export default function DynamicPortfolioScroller() {
 
   return (
     <section ref={wrapperRef} className="relative w-full mt-36 md:mt-48">
-      <div className="sticky top-0 w-full h-screen overflow-hidden">
+      <div className="sticky top-0 w-full h-screen overflow-hidden touch-action-pan-y">
         <div
           ref={innerRef}
           className="flex h-full w-max"
@@ -262,7 +314,7 @@ export default function DynamicPortfolioScroller() {
                 <div className="flex flex-col justify-center items-center h-full gap-4 px-4 pb-32">
                   {project.images.slice(0, 3).map((image, imageIndex) => {
                     const tilts = [-3, 2, -4];
-                    const tilt = tilts[imageIndex];
+                    const tilt = tilts[imageIndex] ?? image.tilt;
                     
                     return (
                       <div
@@ -294,11 +346,7 @@ export default function DynamicPortfolioScroller() {
                     return (
                       <div
                         key={imageIndex}
-                        className={`absolute rounded-2xl overflow-hidden shadow-2xl transition-all duration-400 ${
-                          isHovered 
-                            ? 'scale-105 shadow-3xl' 
-                            : 'hover:scale-102 hover:shadow-3xl'
-                        }`}
+                        className={`absolute rounded-2xl overflow-hidden shadow-2xl transition-all duration-400 ${isHovered ? 'scale-105 shadow-3xl' : 'hover:scale-102 hover:shadow-3xl'}`}
                         style={getImageStyle(image, imageIndex, projectIndex)}
                         onMouseEnter={() => handleImageHover(projectIndex, imageIndex)}
                         onMouseLeave={handleImageLeave}
@@ -310,22 +358,13 @@ export default function DynamicPortfolioScroller() {
                           loading={projectIndex === 0 && imageIndex === 0 ? "eager" : "lazy"}
                         />
                         
-                        <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center transition-all duration-300 ${
-                          isHovered ? 'opacity-100' : 'opacity-0'
-                        }`}>
-                          <div className={`text-white text-center mb-4 transition-all duration-300 ${
-                            isHovered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-                          }`}>
+                        <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+                          <div className={`text-white text-center mb-4 transition-all duration-300 ${isHovered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+                            {/* optional hover content */}
                           </div>
                         </div>
 
-                        <div className={`absolute top-3 right-3 px-2 py-1 text-xs backdrop-blur-sm rounded-full font-semibold transition-all duration-300 ${
-                          image.size === 'large' 
-                            ? 'bg-red-500/90 text-white' 
-                            : image.size === 'medium' 
-                            ? 'bg-blue-500/90 text-white' 
-                            : 'bg-green-500/90 text-white'
-                        } ${isHovered ? 'scale-110' : 'scale-100'}`}>
+                        <div className={`absolute top-3 right-3 px-2 py-1 text-xs backdrop-blur-sm rounded-full font-semibold transition-all duration-300 ${image.size === 'large' ? 'bg-red-500/90 text-white' : image.size === 'medium' ? 'bg-blue-500/90 text-white' : 'bg-green-500/90 text-white'} ${isHovered ? 'scale-110' : 'scale-100'}`}>
                           {image.size}
                         </div>
                       </div>
@@ -335,30 +374,18 @@ export default function DynamicPortfolioScroller() {
               )}
 
               {/* Project Info */}
-              <div className={`absolute text-white z-50 ${
-                isMobile 
-                  ? 'left-4 right-4 bottom-4 max-w-full' 
-                  : 'left-8 bottom-8 max-w-md'
-              }`}>
-                <div className={`bg-black/60 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl ${
-                  isMobile ? 'p-4' : 'p-6'
-                }`}>
+              <div className={`absolute text-white z-50 ${isMobile ? 'left-4 right-4 bottom-4 max-w-full' : 'left-8 bottom-8 max-w-md'}`}>
+                <div className={`bg-black/60 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl ${isMobile ? 'p-4' : 'p-6'}`}>
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-blue-400 rounded-full animate-pulse"></div>
-                    <span className={`font-semibold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent ${
-                      isMobile ? 'text-xs' : 'text-sm'
-                    }`}>
+                    <span className={`font-semibold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent ${isMobile ? 'text-xs' : 'text-sm'}`}>
                       Project {projectIndex + 1}
                     </span>
                   </div>
-                  <h3 className={`font-bold mb-2 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent ${
-                    isMobile ? 'text-2xl' : 'text-4xl'
-                  }`}>
+                  <h3 className={`font-bold mb-2 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent ${isMobile ? 'text-2xl' : 'text-4xl'}`}>
                     {project.title}
                   </h3>
-                  <p className={`text-gray-300 mb-4 leading-relaxed ${
-                    isMobile ? 'text-sm' : 'text-base'
-                  }`}>
+                  <p className={`text-gray-300 mb-4 leading-relaxed ${isMobile ? 'text-sm' : 'text-base'}`}>
                     {project.description}
                   </p>
                 </div>
@@ -378,7 +405,6 @@ export default function DynamicPortfolioScroller() {
           ))}
         </div>
       </div>
-          blah blah blah blah blah blah blah blah
     </section>
   );
 }
