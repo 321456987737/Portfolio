@@ -294,7 +294,7 @@
 //                       <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center transition-all duration-300 ${
 //                         isHovered ? 'opacity-100' : 'opacity-0'
 //                       }`}>
-//                         {/* <div className={`text-white text-center mb-4 transition-all duration-300 ${
+//                         <div className={`text-white text-center mb-4 transition-all duration-300 ${
 //                           isHovered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
 //                         }`}>
 //                           <div className={`font-semibold bg-black/70 px-3 py-1 rounded-full mb-2 backdrop-blur-sm ${
@@ -307,7 +307,7 @@
 //                           }`}>
 //                             {image.position.replace('-', ' ')}
 //                           </div>
-//                         </div> */}
+//                         </div>
 //                       </div>
 
 //                       {/* Size Badge - Responsive positioning */}
@@ -379,9 +379,6 @@
 "use client";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 
-/* ============================
-   Projects & config (keep/update your image paths)
-   ============================ */
 const projects = [
   {
     id: 1,
@@ -430,17 +427,17 @@ const sizeConfig = {
   small: { 
     width: "25%", 
     height: "30%",
-    md: { width: "20%", height: "25%" }
+    md: { width: "20%", height: "25%" } // Smaller on mobile
   },
   medium: { 
     width: "40%", 
     height: "50%",
-    md: { width: "35%", height: "45%" }
+    md: { width: "35%", height: "45%" } // Smaller on mobile
   },
   large: { 
     width: "60%", 
     height: "70%",
-    md: { width: "50%", height: "60%" }
+    md: { width: "50%", height: "60%" } // Smaller on mobile
   }
 };
 
@@ -449,7 +446,7 @@ const positionConfig = {
   "top-left": { 
     top: "10%", 
     left: "5%",
-    md: { top: "15%", left: "3%" }
+    md: { top: "15%", left: "3%" } // Adjusted for smaller screens
   },
   "top-right": { 
     top: "10%", 
@@ -498,9 +495,6 @@ const positionConfig = {
   }
 };
 
-/* ================
-   Component - FIXED VERSION
-   ================ */
 export default function DynamicPortfolioScroller() {
   const wrapperRef = useRef(null);
   const innerRef = useRef(null);
@@ -509,6 +503,7 @@ export default function DynamicPortfolioScroller() {
   const [hoveredImage, setHoveredImage] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Check for mobile on mount and resize
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -520,20 +515,15 @@ export default function DynamicPortfolioScroller() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // FIXED: Improved scroll handler with better mobile support
-  const onScrollFrame = useCallback(() => {
+  // Memoized scroll handler
+  const onScroll = useCallback(() => {
     if (rafRef.current) return;
-    
     rafRef.current = requestAnimationFrame(() => {
       const { start, total, maxTranslate } = geomRef.current;
-      
-      // FIXED: Use consistent scroll detection for mobile
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      
+      const scrollTop = window.scrollY || window.pageYOffset;
       const raw = (scrollTop - start) / total;
       const progress = Math.min(Math.max(raw, 0), 1);
       const translateX = -Math.round(progress * maxTranslate);
-      
       if (innerRef.current) {
         innerRef.current.style.transform = `translate3d(${translateX}px,0,0)`;
       }
@@ -541,45 +531,45 @@ export default function DynamicPortfolioScroller() {
     });
   }, []);
 
+  // Memoized geometry computation
+  const computeGeometry = useCallback(() => {
+    const wrapper = wrapperRef.current;
+    const inner = innerRef.current;
+    if (!wrapper || !inner) return;
+    
+    const rect = wrapper.getBoundingClientRect();
+    const start = window.scrollY + rect.top;
+    const end = start + wrapper.offsetHeight - window.innerHeight;
+    const total = Math.max(end - start, 1);
+    
+    // Calculate maxTranslate based on the number of projects (each takes 100vw)
+    const maxTranslate = Math.max(inner.scrollWidth - window.innerWidth, 0);
+    
+    geomRef.current = { start, end, total, maxTranslate };
+  }, []);
+
+  // Get images for display - only 3 on mobile
+  const getDisplayImages = useCallback((projectImages) => {
+    if (isMobile) {
+      // Return only first 3 images on mobile
+      return projectImages.slice(0, 3);
+    }
+    return projectImages;
+  }, [isMobile]);
+
   useEffect(() => {
     const wrapper = wrapperRef.current;
     const inner = innerRef.current;
     if (!wrapper || !inner) return;
 
-    // FIXED: Better mobile viewport handling
-    const setVhVar = () => {
-      const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-    };
+    // Set initial styles
+    inner.style.willChange = "transform";
+    inner.style.transform = "translate3d(0,0,0)";
 
-    const ensureWrapperHeightPx = () => {
-      // FIXED: Use innerHeight directly for mobile consistency
-      const viewportHeight = window.innerHeight;
-      const perProjectPx = isMobile ? Math.round(viewportHeight * 0.80) : Math.round(viewportHeight);
-      wrapper.style.height = `${projects.length * perProjectPx}px`;
-    };
-
-    const ensureInnerWidthPx = () => {
-      const viewportWidth = window.innerWidth;
-      inner.style.width = `${projects.length * viewportWidth}px`;
-      
-      Array.from(inner.children).forEach((child) => {
-        if (child && child.style) {
-          child.style.width = `${viewportWidth}px`;
-          child.style.height = `${window.innerHeight}px`;
-        }
-      });
-    };
-
-    const computeGeometryRobust = () => {
-      const rect = wrapper.getBoundingClientRect();
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const start = scrollTop + rect.top;
-      const end = start + wrapper.offsetHeight - window.innerHeight;
-      const total = Math.max(end - start, 1);
-      const maxTranslate = Math.max(inner.scrollWidth - window.innerWidth, 0);
-      
-      geomRef.current = { start, end, total, maxTranslate };
+    const ensureWrapperHeight = () => {
+      // Reduce height on mobile for better scrolling experience
+      // The height should be based on number of projects, not images
+      wrapper.style.height = `${projects.length * (isMobile ? 80 : 100)}vh`;
     };
 
     const waitForImages = () => {
@@ -597,71 +587,36 @@ export default function DynamicPortfolioScroller() {
     };
 
     const init = async () => {
-      // FIXED: Add critical mobile touch-action styles
-      inner.style.touchAction = 'pan-y pinch-zoom';
-      inner.style.willChange = 'transform';
-      inner.style.transform = 'translate3d(0,0,0)';
-
-      setVhVar();
-      ensureWrapperHeightPx();
-      ensureInnerWidthPx();
-
+      ensureWrapperHeight();
       await waitForImages();
-      computeGeometryRobust();
-      onScrollFrame();
+      computeGeometry();
+      onScroll();
     };
 
     init();
 
     const ro = new ResizeObserver(() => {
-      ensureWrapperHeightPx();
-      ensureInnerWidthPx();
-      computeGeometryRobust();
-      onScrollFrame();
+      ensureWrapperHeight();
+      computeGeometry();
+      onScroll();
     });
     ro.observe(inner);
 
-    // FIXED: Simplified event listeners - remove visualViewport complexity
-    window.addEventListener('resize', computeGeometryRobust, { passive: true });
-    window.addEventListener('load', computeGeometryRobust, { passive: true });
-    window.addEventListener('scroll', onScrollFrame, { passive: true });
+    // Throttled event listeners
+    window.addEventListener("resize", computeGeometry, { passive: true });
+    window.addEventListener("load", computeGeometry, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
 
     return () => {
-      window.removeEventListener('resize', computeGeometryRobust);
-      window.removeEventListener('load', computeGeometryRobust);
-      window.removeEventListener('scroll', onScrollFrame);
+      window.removeEventListener("resize", computeGeometry);
+      window.removeEventListener("load", computeGeometry);
+      window.removeEventListener("scroll", onScroll);
       ro.disconnect();
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [isMobile, onScrollFrame]);
+  }, [computeGeometry, onScroll, isMobile]);
 
-  // FIXED: Add CSS to prevent default touch behaviors
-  useEffect(() => {
-    // Add critical CSS for mobile scrolling
-    const style = document.createElement('style');
-    style.textContent = `
-      .mobile-scroll-fix {
-        -webkit-overflow-scrolling: touch;
-        scroll-behavior: smooth;
-      }
-      .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .touch-scroll-fix {
-        touch-action: pan-y pinch-zoom;
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
-
+  // Optimized image style calculation with responsive adjustments
   const getImageStyle = useCallback((image, imageIndex, projectIndex) => {
     const size = isMobile ? sizeConfig[image.size].md : sizeConfig[image.size];
     const position = isMobile ? positionConfig[image.position].md : positionConfig[image.position];
@@ -670,18 +625,20 @@ export default function DynamicPortfolioScroller() {
     const baseZIndex = image.size === 'large' ? 20 : image.size === 'medium' ? 15 : 10;
     const zIndex = isHovered ? 999 : baseZIndex;
 
+    // Reduce tilt effect on mobile for better usability
     const tilt = isMobile ? image.tilt * 0.5 : image.tilt;
 
     return {
       ...size,
       ...position,
-      transform: `${position.transform ? position.transform + ' ' : ''} rotate(${tilt}deg)`,
+      transform: `rotate(${tilt}deg) ${position.transform || ''}`,
       transformOrigin: 'center',
       zIndex,
       transition: 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
     };
   }, [hoveredImage, isMobile]);
 
+  // Debounced hover handlers
   const handleImageHover = useCallback((projectIndex, imageIndex) => {
     setHoveredImage(`${projectIndex}-${imageIndex}`);
   }, []);
@@ -691,106 +648,114 @@ export default function DynamicPortfolioScroller() {
   }, []);
 
   return (
-    <section 
-      ref={wrapperRef} 
-      className="relative w-full mt-36 md:mt-48 mobile-scroll-fix touch-scroll-fix"
-    >
-      <div className="sticky top-0 w-full h-screen overflow-hidden touch-action-pan-y no-scrollbar">
+    <section ref={wrapperRef} className="relative w-full mt-36 md:mt-48">
+      <div className="sticky top-0 w-full h-screen overflow-hidden">
         <div
           ref={innerRef}
-          className="flex h-full w-max no-scrollbar touch-scroll-fix"
-          style={{ 
-            transform: "translate3d(0,0,0)",
-            touchAction: 'pan-y pinch-zoom'
-          }}
+          className="flex h-full w-max"
+          style={{ transform: "translate3d(0,0,0)" }}
         >
           {projects.map((project, projectIndex) => (
             <div 
               key={project.id} 
-              className="w-screen h-screen relative flex-shrink-0 no-scrollbar"
-              style={{
-                height: isMobile ? '80vh' : '100vh'
-              }}
+              className="w-screen h-screen relative flex-shrink-0"
             >
-              {/* Mobile Layout - Vertical Stack of 3 Images */}
-              {isMobile ? (
-                <div className="flex flex-col justify-center items-center h-full gap-4 px-4 pb-32">
-                  {project.images.slice(0, 3).map((image, imageIndex) => {
-                    const tilts = [-3, 2, -4];
-                    const tilt = tilts[imageIndex] ?? image.tilt;
-                    
-                    return (
-                      <div
-                        key={imageIndex}
-                        className="w-full rounded-xl overflow-hidden shadow-2xl transition-all duration-400"
-                        style={{
-                          maxHeight: '150px',
-                          height: '150px',
-                          transform: `rotate(${tilt}deg)`,
-                          zIndex: 10 + imageIndex
-                        }}
-                      >
-                        <img
-                          src={image.src}
-                          alt={`${project.title} - ${imageIndex + 1}`}
-                          className="w-full h-full object-cover"
-                          loading={projectIndex === 0 && imageIndex === 0 ? "eager" : "lazy"}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                /* Desktop Layout - Dynamic Grid */
-                <div className="absolute inset-0">
-                  {project.images.map((image, imageIndex) => {
-                    const isHovered = hoveredImage === `${projectIndex}-${imageIndex}`;
-                    
-                    return (
-                      <div
-                        key={imageIndex}
-                        className={`absolute rounded-2xl overflow-hidden shadow-2xl transition-all duration-400 ${isHovered ? 'scale-105 shadow-3xl' : 'hover:scale-102 hover:shadow-3xl'}`}
-                        style={getImageStyle(image, imageIndex, projectIndex)}
-                        onMouseEnter={() => handleImageHover(projectIndex, imageIndex)}
-                        onMouseLeave={handleImageLeave}
-                      >
-                        <img
-                          src={image.src}
-                          alt={`${project.title} - ${imageIndex + 1}`}
-                          className="w-full h-full object-cover transition-transform duration-400"
-                          loading={projectIndex === 0 && imageIndex === 0 ? "eager" : "lazy"}
-                        />
-                        
-                        <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-                          <div className={`text-white text-center mb-4 transition-all duration-300 ${isHovered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-                            {/* optional hover content */}
+              {/* Dynamic Images Grid */}
+              <div className="absolute inset-0">
+                {getDisplayImages(project.images).map((image, imageIndex) => {
+                  const isHovered = hoveredImage === `${projectIndex}-${imageIndex}`;
+                  
+                  return (
+                    <div
+                      key={imageIndex}
+                      className={`absolute rounded-2xl overflow-hidden shadow-2xl transition-all duration-400 ${
+                        isHovered 
+                          ? 'scale-105 shadow-3xl' 
+                          : 'hover:scale-102 hover:shadow-3xl'
+                      } ${isMobile ? 'rounded-xl' : 'rounded-2xl'}`}
+                      style={getImageStyle(image, imageIndex, projectIndex)}
+                      onMouseEnter={() => handleImageHover(projectIndex, imageIndex)}
+                      onMouseLeave={handleImageLeave}
+                    >
+                      <img
+                        src={image.src}
+                        alt={`${project.title} - ${imageIndex + 1}`}
+                        className="w-full h-full object-cover transition-transform duration-400"
+                        loading={projectIndex === 0 && imageIndex === 0 ? "eager" : "lazy"}
+                      />
+                      
+                      {/* Hover Overlay - Responsive text sizes */}
+                      <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center transition-all duration-300 ${
+                        isHovered ? 'opacity-100' : 'opacity-0'
+                      }`}>
+                        <div className={`text-white text-center mb-4 transition-all duration-300 ${
+                          isHovered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+                        }`}>
+                          <div className={`font-semibold bg-black/70 px-3 py-1 rounded-full mb-2 backdrop-blur-sm ${
+                            isMobile ? 'text-xs' : 'text-sm'
+                          }`}>
+                            {image.size === 'large' ? 'Main Feature' : image.size === 'medium' ? 'Key Screen' : 'Detail'}
+                          </div>
+                          <div className={`opacity-90 bg-black/50 px-2 py-1 rounded ${
+                            isMobile ? 'text-xs' : 'text-xs'
+                          }`}>
+                            {image.position.replace('-', ' ')}
                           </div>
                         </div>
-
-                        <div className={`absolute top-3 right-3 px-2 py-1 text-xs backdrop-blur-sm rounded-full font-semibold transition-all duration-300 ${image.size === 'large' ? 'bg-red-500/90 text-white' : image.size === 'medium' ? 'bg-blue-500/90 text-white' : 'bg-green-500/90 text-white'} ${isHovered ? 'scale-110' : 'scale-100'}`}>
-                          {image.size}
-                        </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
 
-              {/* Project Info */}
-              <div className={`absolute text-white z-50 ${isMobile ? 'left-4 right-4 bottom-4 max-w-full' : 'left-8 bottom-8 max-w-md'}`}>
-                <div className={`bg-black/60 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl ${isMobile ? 'p-4' : 'p-6'}`}>
+                      {/* Size Badge - Responsive positioning */}
+                      <div className={`absolute backdrop-blur-sm rounded-full font-semibold transition-all duration-300 ${
+                        isMobile 
+                          ? 'top-2 right-2 px-1.5 py-0.5 text-xs' 
+                          : 'top-3 right-3 px-2 py-1 text-xs'
+                      } ${
+                        image.size === 'large' 
+                          ? 'bg-red-500/90 text-white' 
+                          : image.size === 'medium' 
+                          ? 'bg-blue-500/90 text-white' 
+                          : 'bg-green-500/90 text-white'
+                      } ${isHovered ? 'scale-110' : 'scale-100'}`}>
+                        {isMobile ? image.size.charAt(0).toUpperCase() : image.size}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Project Info - Responsive positioning and sizing */}
+              <div className={`absolute text-white z-50 ${
+                isMobile 
+                  ? 'left-4 right-4 bottom-4 max-w-full' 
+                  : 'left-8 bottom-8 max-w-md'
+              }`}>
+                <div className={`bg-black/60 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl ${
+                  isMobile ? 'p-4' : 'p-6'
+                }`}>
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-2 h-2 bg-gradient-to-r from-green-400 to-blue-400 rounded-full animate-pulse"></div>
-                    <span className={`font-semibold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                    <span className={`font-semibold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent ${
+                      isMobile ? 'text-xs' : 'text-sm'
+                    }`}>
                       Project {projectIndex + 1}
                     </span>
                   </div>
-                  <h3 className={`font-bold mb-2 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent ${isMobile ? 'text-2xl' : 'text-4xl'}`}>
+                  <h3 className={`font-bold mb-2 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent ${
+                    isMobile ? 'text-2xl' : 'text-4xl'
+                  }`}>
                     {project.title}
                   </h3>
-                  <p className={`text-gray-300 mb-4 leading-relaxed ${isMobile ? 'text-sm' : 'text-base'}`}>
+                  <p className={`text-gray-300 mb-4 leading-relaxed ${
+                    isMobile ? 'text-sm' : 'text-base'
+                  }`}>
                     {project.description}
                   </p>
+                  {/* Mobile indicator for limited images */}
+                  {isMobile && project.images.length > 3 && (
+                    <div className="text-xs text-gray-400 italic">
+                      Showing 3 of {project.images.length} images
+                    </div>
+                  )}
                 </div>
               </div>
 
