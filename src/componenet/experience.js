@@ -378,6 +378,7 @@ export default function DynamicPortfolioScroller() {
           ))}
         </div>
       </div>
+          blah blah blah blah blah blah blah blah
     </section>
   );
 }
