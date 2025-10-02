@@ -299,7 +299,7 @@ export default function DynamicPortfolioScroller() {
       <div 
         className="sticky top-0 w-full overflow-hidden"
         style={{ 
-          height: isMobile ? '100vh' : '100vh'
+          height: isMobile ? '150vh' : '100vh'
         }}
       >
         <div
@@ -315,7 +315,7 @@ export default function DynamicPortfolioScroller() {
               key={project.id} 
               className="project-section w-screen flex-shrink-0 relative mobile-project-height"
               style={{
-                height: isMobile ? '100vh' : '100vh'
+                height: isMobile ? '150vh' : '100vh'
               }}
             >
               {/* Mobile Layout - Simple vertical stack */}
